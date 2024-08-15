@@ -15,7 +15,9 @@ driver = webdriver.Firefox(options=options)
 url = "https://twitter.com/i/flow/login"
 driver.get(url)
 time.sleep(5)
+
 print('LOGGING IN...')
+# Logging in
 username = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'input[autocomplete="username"]')))
 username.send_keys("regisrejunior")
 username.send_keys(Keys.ENTER)
@@ -31,11 +33,41 @@ driver.get(url)
 print('MOVED TO TARGET URL...')
 time.sleep(5)
 
-# driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+SCROLL_PAUSE_TIME = 5
+NUMBER_OF_sCROLLS = 3
+tweets_found = []
+# Get scroll height
+last_height = driver.execute_script("return document.body.scrollHeight")
 
 print('SAVING TWEETS...')
 tweets = [my_elem.text for my_elem in WebDriverWait(driver, 20).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, "div[data-testid='tweetText'] span")))]
-driver.save_screenshot('screenie.png')
-for t in tweets:
-    print('-'*50)
+tweets_found += tweets
+
+for a in range(NUMBER_OF_sCROLLS):
+    # Scroll down to bottom
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+    # Wait to load page
+    time.sleep(SCROLL_PAUSE_TIME)
+
+    # find tweets
+    print('SAVING TWEETS...')
+    try:
+        tweets = [my_elem.text for my_elem in WebDriverWait(driver, 20).until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, "div[data-testid='tweetText'] span")))]
+        tweets_found += tweets
+    except Exception:
+        pass
+
+    # Calculate new scroll height and compare with last scroll height
+    new_height = driver.execute_script("return document.body.scrollHeight")
+    if new_height == last_height:
+        break
+    last_height = new_height
+
+for t in tweets_found:
+    print('-'*50 + 'NEW TWEET' + '-'*50)
     print(t)
+driver.save_screenshot('screenie.png')
+
+#TODO: fix broken tweets after scroll
+#TODO: fixt timeout after scroll
